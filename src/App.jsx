@@ -1,17 +1,15 @@
-import { React } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import Note from './pages/note'
+import React from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Login from "./pages/login1";
+import Profile from "./pages/profile";
 
-function App() {
- 
-
+export default function App() {
   return (
-    
-     <Note/>
-    
-  )
+    <Router>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/profile" element={<Profile />} />
+      </Routes>
+    </Router>
+  );
 }
-
-export default App
