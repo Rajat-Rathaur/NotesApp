@@ -8,7 +8,9 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import session from "express-session";
 import flash from 'connect-flash';
-
+import userModel from "./models/UserModel.js"
+import bcrypt from "bcrypt";
+import Cookies from 'js-cookie';
 
 const app = express();
 const port = process.env.PORT || 3000; // You should provide a default value for PORT if it's not set in the environment.
@@ -69,17 +71,47 @@ app.post("/signup", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+passport.use(new LocalStrategy({
+  usernameField: "email", 
+  passwordField: "password",
+}, async (email, password, done) => {
+  try {
+      const user = await userModel.findOne({ email });
+
+      if (!user) {
+          return done(null, false, { message: "Incorrect email" });
+      }
+
+      const passwordMatch = await bcrypt.compare(password, user.password);
+
+      if (!passwordMatch) {
+          return done(null, false, { message: "Incorrect password" });
+      }
+
+      return done(null, user);
+  } catch (error) {
+      return done(error);
+  }
+}));
+
+
 const isAuthenticated = (req, res, next) => {
   if (req.isAuthenticated()) {
     return next();
   }
-  res.send("Error in isAuthenticated")
+  res.status(401).send("Unauthorized user");
 };
-app.get('/profile', isAuthenticated, (req, res) => {
-  res.send(req.user);
+
+app.get('/profile', isAuthenticated, async(req, res) => {
+  
+   console.log(req.user)
+  res.send(req.user); 
+  
+ 
 });
 
-app.post("/login", (req, res, next) => {
+app.post("/login", passport.authenticate("local"),(req, res, next) => {
   passport.authenticate("local", (err, user, info) => {
     if (err) {
       return next(err);
@@ -87,29 +119,45 @@ app.post("/login", (req, res, next) => {
     if (!user) {
       return res.status(401).json({ error: "Authentication failed" });
     }
-    req.logIn(user, (err) => {
+    req.login(user, (err) => {
       if (err) {
         return next(err);
       }
+
+      // Serialize the user and store the user data in the session
+      req.session.passport = { user: user.id };
+
+      // Set the user data as a cookie
+      res.cookie("user", JSON.stringify(user));
+      res.cookie("user_id", user.id, { httpOnly: true });
+      res.cookie("user_name", user.name, { httpOnly: true });
       return res.json({ success: true, user, redirect: "/profile" });
     });
   })(req, res, next);
 });
+
 app.get('/logout', (req, res) => {
   // Use req.logout() with a callback function
   req.logout((err) => {
     if (err) {
       return res.status(500).json({ error: 'Logout failed' });
     }
+    res.clearCookie('user_id');
+    res.clearCookie('user_name');
     res.redirect('/');
   });
 });
 
-/* app.get("/login", (req, res) => {
-  // You can render your login form here
-  res.send("Login form goes here");
+app.get("/login", (req, res) => {
+  if (req.isAuthenticated()) {
+    // If the user is already authenticated, redirect them to the profile page
+    res.redirect("/profile");
+  } else {
+  
+    res.send("Authentican failed while login");
+  }
 });
- */
+
 
 
 app.listen(port, async () => {

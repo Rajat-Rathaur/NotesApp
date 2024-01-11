@@ -43,7 +43,7 @@ userRouter.post("/signup", async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
-passport.use(new LocalStrategy({
+/* passport.use(new LocalStrategy({
     usernameField: "email", 
     passwordField: "password",
 }, async (email, password, done) => {
@@ -65,7 +65,7 @@ passport.use(new LocalStrategy({
         return done(error);
     }
 }));
-
+ */
 
 passport.serializeUser((user, done) => {
     done(null, user.id);

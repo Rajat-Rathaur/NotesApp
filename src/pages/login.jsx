@@ -1,50 +1,60 @@
 import React from "react";
+import { useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
+
 function SignInForm() {
+  const navigate = useNavigate();
+
+
   const [state, setState] = React.useState({
     email: "",
-    password: ""
+    password: "",
   });
-  const handleChange = evt => {
+
+  const handleChange = (evt) => {
     const value = evt.target.value;
     setState({
       ...state,
-      [evt.target.name]: value
+      [evt.target.name]: value,
     });
   };
-  
+
   const handleOnSubmit = async (evt) => {
     evt.preventDefault();
-  
+
     try {
       const { email, password } = state;
-  
+
       // Validate email and password (implement your validation logic)
-  
+
       // Create the request body
       const body = JSON.stringify({ email, password });
-  
+
       // Make a POST request to your login API endpoint
-      const response = await fetch('http://localhost:4000/login', {
-        method: 'POST',
+      const response = await fetch("http://localhost:4000/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body,
       });
-  
+
       // Check the response status or handle it accordingly
       if (response.ok) {
         const responseData = await response.json();
-        console.log(responseData.user.email)
+        console.log(responseData.user.email);
         alert(`Login successful! Welcome, ${responseData.user.email}!`);
-  
+        Cookies.set('userEmail', responseData.user.email);
+        Cookies.set('userId', responseData.user.id)
+        Cookies.set('userName', responseData.user.username);
+        Cookies.set('name', responseData.user.name)
         // Redirect to the /profile page
-        window.location.href = '/profile'; // Replace with your client-side routing mechanism
+        navigate("/profile");
       } else {
         const errorResponse = await response.json();
-        alert(`Login failed: ${errorResponse.message || 'Unknown error'}`);
+        alert(`Login failed: ${errorResponse.message || "Unknown error"}`);
       }
-  
+
       // Clear the form state after successful login
       for (const key in state) {
         setState({
@@ -53,11 +63,10 @@ function SignInForm() {
         });
       }
     } catch (error) {
-      console.error('Error during login:', error);
-      alert('An error occurred during login. Please try again.');
+      console.error("Error during login:", error);
+      alert("An error occurred during login. Please try again.");
     }
   };
-  
   
 
   return (
